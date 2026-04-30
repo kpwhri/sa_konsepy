@@ -15,7 +15,7 @@ import enum
 import re
 
 from konsepy.context.contexts import get_contexts
-from konsepy.context.other_subject import check_if_other_subject
+from konsepy.context.other_subject import check_if_other_subject as _check_if_other_subject
 
 
 class SuicideAttempt(enum.Enum):  # TODO: change 'Concept' to relevant concept name
@@ -30,12 +30,13 @@ class SuicideAttempt(enum.Enum):  # TODO: change 'Concept' to relevant concept n
 
 # account for variables ways to describe HISTORY suicide attempt
 suicide_attempt = '(?:{})'.format('|'.join([
-    r'suicide\W+attempts?',
+    r'suicid\w+\W+attempts?',
     r'deliberate\W*self\W*harm',
     r'self\W*harm\W*behaviou?r',
     r'attempted\W*(?:to\W*commit\W*)?suicide',
     r'attempted\W*(?:\w+\W+){,2}to\W*take\W*(?:his|her)\W*(?:own\W*)?life',
     r'attempted\W*to\W*kill\W*(?:him|her)self',
+    r'suicid\w+\W*behaviou?r',
 ]))
 
 day = r'(?:\d{1,2}\W*)'
@@ -71,6 +72,7 @@ times = rf'(?:{number}\s*(?:x|times?))'
 more_than_times = rf'{more_than}{times}'
 age = rf'(?:at\W*)?age\W*{number}'
 sa_hx_pred = rf'(?:{approximately}\W*)?(?:{in_period}|{period_ago}|{more_than_times}|{as_a_role}|{age})'
+the = r'\b(?:an?|the|his|her|their)\b'
 
 # current suicide attempts building on Fernandes et al (2018)
 self = (r'(?:'
@@ -80,28 +82,34 @@ self = (r'(?:'
 attempt = r'(?:attempt|fail|tr[yi])\w*(?:\W*to)?'
 in_front_subj = r'(?:leap|jump|walk|ran|run)\w*'
 in_front_of = r'(?:in\W*front\W*of|out\W*into|into)'
-in_front_pred = r'(?:\w+\W*){0,2}(?:motor|moving|traffic|car|truck|vehicle|bridge|river|lake)\w*'
+in_front_pred = r'(?:\w+\W+){0,2}(?:motor|moving|traffic|car|truck|vehicle|bridge|river|lake)\b\w*'
 from_a_bridge = r'(?:(?:off|from)?\W*(?:\w+\W*){0,2}(?:bridge|building))'
 weapon = r'(?:gun|firearm|handgun|knife|rifle|weapon)'
-suicide_action = r'(?:drown|end|hang|kill|shoot|stab|take|commit\W*suicide)'
+suicide_action = r'(?:drown|end|hang|kill|shoot|stab|take)'
+commit_suicide = r'(?:commit\W*suicide|(?:deliberate\W*)?self\W*harm)'
 used = r'(?:used|took)'
 harmed = r'(?:shot|stabbed)'
+
+any_sa = rf'(?:{commit_suicide}|{suicide_attempt})'
+
 SA_PAT = re.compile(
     rf'(?:'
     rf'after\W*a\W*suicide\W*attempt'
+    rf'|{suicide_attempt}'
     rf'|suicid\w+\W*(?:attempt\W*)?(?:was\W*)?(?:unsuccessful|not\W*successful|due\W*to)'
+    rf'|{attempt}\W*{commit_suicide}'
     rf'|{attempt}\W*{suicide_action}\W*{self}'
     rf'|{in_front_subj}\W*{in_front_of}\W*{in_front_pred}'
     rf'|jump\w*\W*{from_a_bridge}'
-    rf'|{used}\W*{weapon}\W*(?:\w+\W*){{0,3}}{self}'
+    rf'|{used}\W*(?:{the}\W*)?{weapon}\W*(?:\w+\W*){{0,3}}{self}'
     rf'|{harmed}\W*{self}'
     rf')',
-    re.I
+    re.I,
 )
 
 
-def check_if_other(m, precontext, postcontext, text, window, **kwargs):
-    if check_if_other_subject(m, precontext, postcontext, text, window):
+def check_if_other_subject(m, precontext, postcontext, text, window, **kwargs):
+    if _check_if_other_subject(m, precontext, postcontext, text, window):
         return SuicideAttempt.FAMILY
 
 
@@ -127,28 +135,28 @@ def check_if_in_problem_list(m, text, **kwargs):
 
 
 REGEXES = [
-    (re.compile(rf'\b{deny}\W*{suicide_attempt}\W*{sa_hx_pred}\b', re.I),
+    (re.compile(rf'\b{deny}\W*{any_sa}\W*{sa_hx_pred}\b', re.I),
      SuicideAttempt.NO),
     # must be above SA SA_pred due to 'denies hx of SA in teens'
-    (re.compile(rf'\b(?:{deny}|{no})\W*(?:\w+\W*)?{hx_of}\W*{suicide_attempt}\b', re.I),
+    (re.compile(rf'\b(?:{deny}|{no})\W*(?:\w+\W*)?{hx_of}\W*{any_sa}\b', re.I),
      SuicideAttempt.NO, [check_if_colon_before]),
-    (re.compile(rf'\b(?:{family_hx})\W*(?:\w+\W*)?{hx_of}\W*{suicide_attempt}\b', re.I),
+    (re.compile(rf'\b(?:{family_hx})\W*(?:\w+\W*)?{hx_of}\W*{any_sa}\b', re.I),
      SuicideAttempt.FAMILY, [check_if_colon_before]),
-    (re.compile(rf'\b{suicide_attempt}\W*{sa_hx_pred}\b', re.I),
+    (re.compile(rf'\b{any_sa}\W*{sa_hx_pred}\b', re.I),
      SuicideAttempt.HISTORY, [check_if_other_subject]),
-    (re.compile(rf'\b{hx_of}\W*{suicide_attempt}\s*:\s*(?:{deny}|{no})\b', re.I),
+    (re.compile(rf'\b{hx_of}\W*{any_sa}\s*:\s*(?:{deny}|{no})\b', re.I),
      SuicideAttempt.NO),
     # specific (optional <- these get caught by next regex; can't move up otherwise 'denied hx of sa in teens')
     (re.compile(
-        rf'\b{hx_of}\W*{suicide_attempt}\s*:\s*(?:{yes}|{number}|{sa_hx_pred})\b', re.I),
+        rf'\b{hx_of}\W*{any_sa}\s*:\s*(?:{yes}|{number}|{sa_hx_pred})\b', re.I),
      SuicideAttempt.HISTORY),
     # more generic
-    (re.compile(rf'\b{hx_of}\W*{suicide_attempt}\b', re.I),
+    (re.compile(rf'\b{hx_of}\W*{any_sa}\b', re.I),
      SuicideAttempt.HISTORY, [check_if_other_subject, check_if_in_problem_list]),
-    (re.compile(rf'\b(?:Z91.51|Z91.52|R45.88)\b'),
+    (re.compile(rf'\b(?:Z91.51|Z91.52|R45.88|R45.851|E958.9|V62.84)\b'),
      SuicideAttempt.CODE),
     # current suicide attempt
-    (SA_PAT, SuicideAttempt.YES, [check_if_other_subject])
+    (SA_PAT, SuicideAttempt.YES, [check_if_other_subject, check_if_in_problem_list])
 ]
 
 
