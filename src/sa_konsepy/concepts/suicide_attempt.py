@@ -15,7 +15,9 @@ import enum
 import re
 
 from konsepy.context.contexts import get_contexts
+from konsepy.context.negation import check_if_negated
 from konsepy.context.other_subject import check_if_other_subject as _check_if_other_subject
+from konsepy.rxsearch import search_all_regex
 
 
 class SuicideAttempt(enum.Enum):  # TODO: change 'Concept' to relevant concept name
@@ -65,7 +67,7 @@ hx_of = r'(?:past|(?:history|hx)\W*of|previous|prior)'
 
 deny = r'(?:den(?:y|ies|ied))'
 family_hx = r'(?:family)'
-no = r'(?:no|or|nor|not)'
+no = r'(?:no|or|nor|not|never)'
 yes = r'(?:yes|briefly|previously)'
 number = r'(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen)'
 times = rf'(?:{number}\s*(?:x|times?))'
@@ -156,7 +158,11 @@ REGEXES = [
     (re.compile(rf'\b(?:Z91.51|Z91.52|R45.88|R45.851|E958.9|V62.84)\b'),
      SuicideAttempt.CODE),
     # current suicide attempt
-    (SA_PAT, SuicideAttempt.YES, [check_if_other_subject, check_if_in_problem_list])
+    (SA_PAT, SuicideAttempt.YES, [
+        check_if_other_subject,
+        check_if_in_problem_list,
+        lambda *x, **kw: check_if_negated(*x, **kw, neg_concept=SuicideAttempt.NO),
+    ])
 ]
 
 
@@ -192,4 +198,4 @@ def search_and_replace_regex_func(regexes, window=30):
     return _search_all_regex
 
 
-RUN_REGEXES_FUNC = search_and_replace_regex_func(REGEXES)  # find all occurrences of all regexes
+RUN_REGEXES_FUNC = search_all_regex(REGEXES, suppress_overlaps=True)  # find all occurrences of all regexes

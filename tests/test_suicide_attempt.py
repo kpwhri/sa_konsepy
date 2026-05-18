@@ -51,6 +51,8 @@ def test_run_regexes_yes(text):
     'denies prior suicide attempt during childhood',
     'denies past self harm behaviour in high school',
     'denied deliberate self harm in the past',
+    'no suicide attempt',
+    'suicide attempt: never',
 ])
 def test_run_regexes_no(text):
     results = set(RUN_REGEXES_FUNC(text))
@@ -105,3 +107,13 @@ def test_run_regexes_history(text):
 def test_run_regexes_problem_list(text):
     results = set(RUN_REGEXES_FUNC(text))
     assert SuicideAttempt.PROBLEM_LIST in results
+
+
+@pytest.mark.parametrize('text', [
+    'no suicide attempt',
+    'suicide attempt: never',
+])
+def test_suppress_overlaps_is_working(text):
+    results = list(RUN_REGEXES_FUNC(text))
+    assert len(results) == 1
+    assert results[0] == SuicideAttempt.NO
