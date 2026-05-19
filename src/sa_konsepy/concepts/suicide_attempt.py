@@ -17,7 +17,7 @@ import re
 from konsepy.context.contexts import get_contexts
 from konsepy.context.negation import check_if_negated
 from konsepy.context.other_subject import check_if_other_subject as _check_if_other_subject
-from konsepy.rxsearch import search_all_regex
+from konsepy.rxsearch import search_all_regex, SKIP
 
 
 class SuicideAttempt(enum.Enum):  # TODO: change 'Concept' to relevant concept name
@@ -117,7 +117,7 @@ def check_if_other_subject(m, precontext, postcontext, text, window, **kwargs):
 
 def check_if_colon_before(m, precontext, **kwargs):
     if precontext.strip().endswith(':'):
-        return True
+        return SKIP
 
 
 def check_if_in_problem_list(m, text, **kwargs):
@@ -198,4 +198,5 @@ def search_and_replace_regex_func(regexes, window=30):
     return _search_all_regex
 
 
-RUN_REGEXES_FUNC = search_all_regex(REGEXES, suppress_overlaps=True)  # find all occurrences of all regexes
+# find all occurrences of all non-overalpping regexes
+RUN_REGEXES_FUNC = search_all_regex(REGEXES, suppress_overlaps=True)
