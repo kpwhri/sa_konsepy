@@ -1,6 +1,6 @@
 import pytest
 
-from sa_konsepy.concepts.suicide_attempt import SuicideAttempt, RUN_REGEXES_FUNC
+from sa_konsepy.concepts.suicide_attempt import SuicideAttempt, RUN_REGEXES_FUNC, SA_INFRONT_ACTION_PAT
 
 
 @pytest.mark.parametrize('text', [
@@ -33,7 +33,6 @@ from sa_konsepy.concepts.suicide_attempt import SuicideAttempt, RUN_REGEXES_FUNC
     'shot herself',
     'stabbed himself',
     'ran into traffic',
-    'walked into a moving car',
 ])
 def test_run_regexes_yes(text):
     results = set(RUN_REGEXES_FUNC(text))
@@ -71,6 +70,7 @@ def test_run_regexes_no(text):
     'aunt has history of suicide attempt in teens',
     'son attempted to commit suicide during college',
     'uncle attempted to commit suicide',
+    'DAUGHTER\nattempted suicide',
 ],
                          )
 def test_run_regexes_family(text):
@@ -117,3 +117,23 @@ def test_suppress_overlaps_is_working(text):
     results = list(RUN_REGEXES_FUNC(text))
     assert len(results) == 1
     assert results[0] == SuicideAttempt.NO
+
+
+@pytest.mark.parametrize('text', [
+    'helping grandmother into the car',
+    'deer jumped in front of the car',
+    'jumping into the lake',
+])
+def test_run_regexes_empty(text):
+    results = list(RUN_REGEXES_FUNC(text))
+    assert len(results) == 0
+
+@pytest.mark.parametrize('text', [
+    'ran in front of a car',
+    'jumped out into traffic',
+    'tried to walk in front of a train',
+    'attempts walking into traffic',
+])
+def test_sa_infront_action_pat(text):
+    res = SA_INFRONT_ACTION_PAT.search(text)
+    assert res is not None

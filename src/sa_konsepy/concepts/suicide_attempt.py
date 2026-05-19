@@ -15,7 +15,7 @@ import enum
 import re
 
 from konsepy.context.contexts import get_contexts
-from konsepy.context.negation import check_if_negated
+from konsepy.context.negation import check_if_negated, has_prenegation
 from konsepy.context.other_subject import check_if_other_subject as _check_if_other_subject
 from konsepy.rxsearch import search_all_regex, SKIP
 
@@ -82,15 +82,15 @@ self = (r'(?:'
         r'|(?:(?:his|her|their)\W*)(?:own\W*)?life'
         r')')
 attempt = r'(?:attempt|fail|tr[yi])\w*(?:\W*to)?'
-in_front_subj = r'(?:leap|jump|walk|ran|run)\w*'
+in_front_subj = r'\b(?:leap|jump|walk|ran|run)\w{0,4}\b'
 in_front_of = r'(?:in\W*front\W*of|out\W*into|into)'
-in_front_pred = r'(?:\w+\W+){0,2}(?:motor|moving|traffic|car|truck|vehicle|bridge|river|lake)\b\w*'
+in_front_pred = r'(?:\w+\W+){0,2}(?:motor|bus|train|traffic|car|truck|vehicle)\b\w*'
 from_a_bridge = r'(?:(?:off|from)?\W*(?:\w+\W*){0,2}(?:bridge|building))'
 weapon = r'(?:gun|firearm|handgun|knife|rifle|weapon)'
 suicide_action = r'(?:drown|end|hang|kill|shoot|stab|take)'
-commit_suicide = r'(?:commit\W*suicide|(?:deliberate\W*)?self\W*harm)'
-used = r'(?:used|took)'
-harmed = r'(?:shot|stabbed)'
+commit_suicide = r'(?:commit\W*suicide|(?:deliberate\W*)?self\W*harm|(?:death|died)\W*by\W*suicid)'
+used = r'\b(?:used|took)\b'
+harmed = r'\b(?:shot|stabbed)\b'
 
 any_sa = rf'(?:{commit_suicide}|{suicide_attempt})'
 
@@ -101,10 +101,22 @@ SA_PAT = re.compile(
     rf'|suicid\w+\W*(?:attempt\W*)?(?:was\W*)?(?:unsuccessful|not\W*successful|due\W*to)'
     rf'|{attempt}\W*{commit_suicide}'
     rf'|{attempt}\W*{suicide_action}\W*{self}'
-    rf'|{in_front_subj}\W*{in_front_of}\W*{in_front_pred}'
     rf'|jump\w*\W*{from_a_bridge}'
     rf'|{used}\W*(?:{the}\W*)?{weapon}\W*(?:\w+\W*){{0,3}}{self}'
     rf'|{harmed}\W*{self}'
+    rf')',
+    re.I,
+)
+
+vehicle = r'(?:traffic|a\W*(?:moving\W*)?(?:car|truck|train|bus|vehicle))'
+intentional = r'(?:intentional(?:ly)?)'
+SA_INFRONT_ACTION_PAT = re.compile(
+    rf'(?:'
+    rf'{in_front_subj}\W*{in_front_of}\W*{in_front_pred}\W*{intentional}'
+    rf'|{attempt}\W*{in_front_subj}\W*{in_front_of}\W*{in_front_pred}'
+    rf'|(?:ran|jumped|leaped|walked)\W*(?:out\W*)?into\W*traffic'
+    rf'|(?:ran|jumped|leaped|walked)\W*in\W*front\W*of\W*{vehicle}'
+    rf'|{attempt}\W*(?:r[au]n|jump|leap|walk)\w*\W*in\W*front\W*of\W*{vehicle}'
     rf')',
     re.I,
 )
@@ -113,6 +125,8 @@ SA_PAT = re.compile(
 def check_if_other_subject(m, precontext, postcontext, text, window, **kwargs):
     if _check_if_other_subject(m, precontext, postcontext, text, window):
         return SuicideAttempt.FAMILY
+    if has_prenegation(precontext, re.compile('animal|deer|cat|dog|bunny|rabbit|bird', re.I)):
+        return SKIP
 
 
 def check_if_colon_before(m, precontext, **kwargs):
@@ -162,41 +176,12 @@ REGEXES = [
         check_if_other_subject,
         check_if_in_problem_list,
         lambda *x, **kw: check_if_negated(*x, **kw, neg_concept=SuicideAttempt.NO),
+    ]),
+    (SA_INFRONT_ACTION_PAT, SuicideAttempt.YES, [
+        check_if_other_subject,
+        lambda *x, **kw: check_if_negated(*x, **kw, neg_concept=SuicideAttempt.NO),
     ])
 ]
-
-
-def search_and_replace_regex_func(regexes, window=30):
-    """Search, but replace found text to prevent double-matching"""
-
-    def _search_all_regex(text, include_match=False):
-        for regex, category, *other in regexes:
-            funcs = None
-            if len(other) > 0:
-                funcs = other[0]
-            text_pieces = []
-            prev_end = 0
-            for m in regex.finditer(text):
-                found = None
-                if funcs:
-                    for func in funcs:  # parse function in order
-                        if res := func(**get_contexts(m, text, window)):
-                            found = (res, m) if include_match else res
-                            break
-                if found:
-                    if found is True or (include_match and found[0] is True):
-                        continue  # no result
-                    yield found
-                else:
-                    yield (category, m) if include_match else category
-                text_pieces.append(text[prev_end:m.start()])
-                text_pieces.append(f" {(len(m.group()) - 2) * '.'} ")
-                prev_end = m.end()
-            text_pieces.append(text[prev_end:])
-            text = ''.join(text_pieces)
-
-    return _search_all_regex
-
 
 # find all occurrences of all non-overalpping regexes
 RUN_REGEXES_FUNC = search_all_regex(REGEXES, suppress_overlaps=True)
