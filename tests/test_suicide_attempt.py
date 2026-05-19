@@ -1,6 +1,6 @@
 import pytest
 
-from sa_konsepy.concepts.suicide_attempt import SuicideAttempt, RUN_REGEXES_FUNC, SA_INFRONT_ACTION_PAT
+from sa_konsepy.concepts.suicide_attempt import SuicideAttempt, RUN_REGEXES_FUNC, SA_ACTION_PAT
 
 
 @pytest.mark.parametrize('text', [
@@ -36,7 +36,7 @@ from sa_konsepy.concepts.suicide_attempt import SuicideAttempt, RUN_REGEXES_FUNC
 ])
 def test_run_regexes_yes(text):
     results = set(RUN_REGEXES_FUNC(text))
-    assert SuicideAttempt.YES in results
+    assert SuicideAttempt.YES in results or SuicideAttempt.YES_ACTION in results
 
 
 @pytest.mark.parametrize('text', [
@@ -135,5 +135,5 @@ def test_run_regexes_empty(text):
     'attempts walking into traffic',
 ])
 def test_sa_infront_action_pat(text):
-    res = SA_INFRONT_ACTION_PAT.search(text)
+    res = SA_ACTION_PAT.search(text)
     assert res is not None

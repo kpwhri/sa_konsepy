@@ -14,13 +14,12 @@ Steps for creating a new category:
 import enum
 import re
 
-from konsepy.context.contexts import get_contexts
 from konsepy.context.negation import check_if_negated, has_prenegation
 from konsepy.context.other_subject import check_if_other_subject as _check_if_other_subject
 from konsepy.rxsearch import search_all_regex, SKIP
 
 
-class SuicideAttempt(enum.Enum):  # TODO: change 'Concept' to relevant concept name
+class SuicideAttempt(enum.Enum):
     NO = 0
     YES = 1
     HISTORY = 2
@@ -28,6 +27,7 @@ class SuicideAttempt(enum.Enum):  # TODO: change 'Concept' to relevant concept n
     CODE = 4
     PROBLEM_LIST = 5  # YES, in problem list
     SELF_HARM = 6
+    YES_ACTION = 2  # YES, but related to an action performed
 
 
 # account for variables ways to describe HISTORY suicide attempt
@@ -101,22 +101,22 @@ SA_PAT = re.compile(
     rf'|suicid\w+\W*(?:attempt\W*)?(?:was\W*)?(?:unsuccessful|not\W*successful|due\W*to)'
     rf'|{attempt}\W*{commit_suicide}'
     rf'|{attempt}\W*{suicide_action}\W*{self}'
-    rf'|jump\w*\W*{from_a_bridge}'
-    rf'|{used}\W*(?:{the}\W*)?{weapon}\W*(?:\w+\W*){{0,3}}{self}'
-    rf'|{harmed}\W*{self}'
     rf')',
     re.I,
 )
 
 vehicle = r'(?:traffic|a\W*(?:moving\W*)?(?:car|truck|train|bus|vehicle))'
 intentional = r'(?:intentional(?:ly)?)'
-SA_INFRONT_ACTION_PAT = re.compile(
+SA_ACTION_PAT = re.compile(
     rf'(?:'
     rf'{in_front_subj}\W*{in_front_of}\W*{in_front_pred}\W*{intentional}'
     rf'|{attempt}\W*{in_front_subj}\W*{in_front_of}\W*{in_front_pred}'
     rf'|(?:ran|jumped|leaped|walked)\W*(?:out\W*)?into\W*traffic'
     rf'|(?:ran|jumped|leaped|walked)\W*in\W*front\W*of\W*{vehicle}'
     rf'|{attempt}\W*(?:r[au]n|jump|leap|walk)\w*\W*in\W*front\W*of\W*{vehicle}'
+    rf'|jump\w*\W*{from_a_bridge}'
+    rf'|{used}\W*(?:{the}\W*)?{weapon}\W*(?:\w+\W*){{0,3}}{self}'
+    rf'|{harmed}\W*{self}'
     rf')',
     re.I,
 )
@@ -177,7 +177,7 @@ REGEXES = [
         check_if_in_problem_list,
         lambda *x, **kw: check_if_negated(*x, **kw, neg_concept=SuicideAttempt.NO),
     ]),
-    (SA_INFRONT_ACTION_PAT, SuicideAttempt.YES, [
+    (SA_ACTION_PAT, SuicideAttempt.YES_ACTION, [
         check_if_other_subject,
         lambda *x, **kw: check_if_negated(*x, **kw, neg_concept=SuicideAttempt.NO),
     ])
