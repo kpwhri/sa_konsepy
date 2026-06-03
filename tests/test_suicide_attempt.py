@@ -123,6 +123,7 @@ def test_suppress_overlaps_is_working(text):
     'helping grandmother into the car',
     'deer jumped in front of the car',
     'jumping into the lake',
+    'ran into her car',
 ])
 def test_run_regexes_empty(text):
     results = list(RUN_REGEXES_FUNC(text))
