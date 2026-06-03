@@ -18,23 +18,12 @@ Types of changes:
 
 ## [Unreleased]
 
-## [0.1.0]
+## [0.1.0] - 2026-06-03
 
 ### Added
 
-* `this`
-* demo on developing simple NLP for social support
-* `corpus_lined.csv` with README explaining the examples
-* Added new option for running all concepts while excluding aggregate output
+* First release, migrating all elements from `konsepy_nlp_template`
 
-### Fixed
+[unreleased]: https://github.com/kpwhri/sa_konsepy/compare/0.1.0...HEAD
 
-* Bug in `run_concepts` which supplied `package_name` parameter twice
-
-### Changed
-
-* Update to meet requirements of `konsepy 0.1.0`
-
-[unreleased]: https://github.com/kpwhri/konsepy_nlp_template/compare/0.1.0...HEAD
-
-[0.1.0]: https://github.com/kpwhri/konsepy_nlp_template/releases/0.1.0
+[0.1.0]: https://github.com/kpwhri/sa_konsepy/releases/0.1.0

@@ -1,10 +1,10 @@
 [project]
-name = "konsepy_nlp_template"
-version = "0.4.0"
+name = "sa_konsepy"
+version = "0.1.0"
 description = "Project template for running konsepy NLP."
 requires-python = ">=3.11"
 dependencies = [
-    "konsepy==0.6.0",
+    "konsepy==0.6.2",
 ]
 
 [dependency-groups]

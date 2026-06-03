@@ -1,128 +1,439 @@
-# Konsepy NLP Template
+# Self-Harm and Suicide Attempt Event Detection
 
-A template for building regex-based NLP algorithms using the konsepy framework.
+This project uses rule-based natural language processing (NLP) to identify text that may describe self-harm, suicide
+attempts, or related history in clinical or narrative notes.
 
-## About/Terminology
+The project is built with the `konsepy` framework and uses regular expressions to detect specific language patterns. It
+is intended to support structured review of large text corpora by flagging potentially relevant mentions for further
+analysis or validation.
 
-Konsepy works around the idea of a `concept`. A `concept` is a semantic category which might have multple representations in text. For example, a concept might be SOCIAL_ISOLATION which targets any text describing this in text (e.g., 'no friends', 'lacks social support', etc.). Another could be COUGHING which might be described in text as 'coughs', 'hacking', 'wheeze', etc. The selection of concepts will depend on the particular application. If you only care about a single output category, it's sufficient to just have a single target concept.
+> **Important:** This software does not make clinical decisions. It should not be used as a substitute for professional
+> judgment, risk assessment, crisis response, or patient care. Outputs should be reviewed and validated by qualified users
+> before being used for research, reporting, or operational decisions.
 
-Each `concept` is assigned a set of regular expressions which are used to assign a concept to a section of text. These regular expressions each receive an individual label.
+## What This Project Detects
 
+The primary concept in this project is suicide attempt / self-harm documentation.
 
-### About Negation
+The detector can identify several types of mentions, including:
 
-Negation is not currently supported at the regular expression level, so if negation is important for your particular application (e.g., 'coughing' vs 'not coughing'), this can be done as either two concepts or two different regular expressions.
+- Direct suicide attempt statements
+    - Example: `after a suicide attempt`
+- Attempted suicide phrasing
+    - Example: `attempted suicide`
+- Self-harm behavior descriptions
+    - Example: `deliberate self harm`
+- Historical mentions
+    - Example: `history of suicide attempt`
+- Negated mentions
+    - Example: `no history of suicide attempt`
+- Family or other-subject mentions
+    - Example: `family history of suicide attempt`
+- Problem-list mentions
+    - Example: `problem list: hx of suicide attempt`
+- Action-based descriptions
+    - Example: `jumped in front of traffic`
 
-## Getting Started
+The output should be interpreted as text pattern matches, not as confirmed clinical events.
 
-For a complete example, see [this step-by-step walkthrough](doco/SOCIAL_SUPPORT_DEMO.md).
+## Input Data Format
 
-### Prerequisites
+The input corpus should be a CSV file.
 
-* Python >=3.11
-* Download/clone this project
-  * The path to this location will be referred to as `$PATH` in the instructions below (this might be `C:\code`, etc.)
-* (Optional, but recommended) setup a virtual environment to isolate this particular installation
-  * `cd $PATH\konsepy_nlp_template`
-  * `python -m venv .venv`
-    * The full path to `python.exe` might need to be specified in this command
-  * Activate:
-    * Powershell: `.venv/scripts/activate.ps1`
-    * Linux/Mac: `source .venv/bin/activate`
-* Install required packages:
-  * `pip install requirements.txt`
-  * OR `pip install .`
-* A corpus file
-  * In the future, other data sources will be included, for now it must be `csv` or `sas7bdat`
-  * Columns (these can be configured to use different names, but it's easiest if you select these names)
-    * `studyid`: (required) subject-level identifier; if not important/relevant, set all instances to `1`
-    * `note_id`: (required) note-level identifier; unique identifier for each note
-    * `note_text`: (required) text associated with each note
-    * `note_date`: (optional) date of note; not used by algorithm so probably easiest to ignore
-    * `note_line`: (optional) if note broken into multiple segments (see example in `sample/corpus_lined.csv`), specify this to join them
-      * If using `note_line`, all portions of the note are assumed to appear together in the dataset (i.e., order by `note_id, note_line`)
-    * corpus may contain other columns which will be ignored
+By default, the code expects the following columns:
 
-### Setup
+| Column      | Required | Description                                                                                                |
+|-------------|----------|------------------------------------------------------------------------------------------------------------|
+| `studyid`   | Yes      | Subject-level identifier. If you do not have subject IDs, use the same value for all rows, such as `1`.    |
+| `note_id`   | Yes      | Unique identifier for each note or document.                                                               |
+| `note_text` | Yes      | The text to process.                                                                                       |
+| `note_date` | No       | Date of the note. This is optional and is not required by the detection rules.                             |
+| `note_line` | No       | Line order for notes split across multiple rows. Use this only if one note is divided into multiple lines. |
 
-* Pick a name for your project (e.g., `cough_nlp`): `$PROJECT_NAME`
-  * The name should be lowercase using only letters and underscores
-  * We will call `$PROJECT_PATH` the path `$PATH/$PROJECT_NAME` (e.g., C:\code\cough_nlp)
-* Rename the directory in $PATH to from `konsepy_nlp_template` to $PROJECT_NAME
-* Rename the directory in $PROJECT_PATH/src from `example_nlp` to $PROJECT_NAME
-* Open $PROJECT_PATH/src/config.py and replace `example_nlp` with $PROJECT_NAME
+Example CSV:
 
-### Running on Command Line
-
-There are a number of tools to simplify running/testing the various steps, but this guide will be written with the command line in mind (in particular, Powershell on Windows)
-
-Before running any of the commands in the following sections, always be sure that you have prepared your shell with these commands:
-
-* Navigate to project path
-  * `cd $PROJECT_PATH`
-* Initialize virtual environment
-  * `.venv\scripts\activate.ps1`
-* Set PYTHONPATH to include project (so Python knows where to find your code)
-  * `$env:PYTHONPATH=$PROJECT_PATH\src`
-
-### Creating A New Concept
-
-In creating a new concept, we will approach it in the style of test-driven development. We will first identify an examplar piece of text (either drawn from our corpus or, my preference, inspired by it), and then write a regular expression to make sure that our test case is captured.
-
-* Copy over concept and test files to appropriate directories and rename
-  * Copy `new_concept_template.py` to $PROJECT_PATH/src/$PROJECT_NAME/concepts
-    * Rename the file to your concept (e.g., `cough.py`)
-      * The name should be lowercase letters and underscores only
-  * Copy `test_concept_template.py` to $PROJECT_PATH/tests
-    * Rename the file to `test_` + your concept (e.g., `test_cough.py`)
-  * Open both files and follow the steps inside the files (you can search on the phrase `TODO` to find relevant sections to setup)
-* It's usually easiest to have both files opened side-by-side
-* Create some test text (e.g., 'He has been coughing without relief.') and place it in `test_concept.py` file, overwriting thhe 'Text excerpt...' on line 11
-  * Create a regular expression in `concept.py` on line 26, replacing the `\bconcept\b` with a target regex
-  * You can use a site like `https://regexr.com/` to help develop your regular expressions, but beware of placing your own text online (if, e.g., it contains PHI) -- that's why it's often best to use illustrative examples.
-* Now, run your tests
-  * `pytest tests`
-  * You should see a report highlighting, in particular, where your tests failed (if they did)
-  * Fix the issue and then move to the next example
-
-### Finding Example Test
-
-To find example text (text 'snippets'), you can use the `$PROJECT_PATH/src/get_text_snippets.py`. These can help identify examplese of these terms/phrases in the text.
-
-Usage:
-```bash
-# get text snippets when the letters 'cough' appear in corpus.csv and output to the directory `out`
-python src/get_text_snippets.py --input-files sample/corpus.csv --outdir out --regexes COUGH==cough
+```csv
+studyid,note_id,note_text
+1,1001,"Patient reports a prior suicide attempt in high school."
+1,1002,"Patient denies history of suicide attempt."
 ```
 
-Or, for a lined corpus:
+If your data uses different column names, the command-line tools can be configured with arguments such as `--id-label`,
+`--noteid-label`, and `--notetext-label`.
+
+## Getting Started for New Python Users
+
+This section assumes you are not already familiar with Python. Follow the steps in order.
+
+### 1. Install Python
+
+Install Python 3.11 or newer.
+
+This project is compatible with Python 3.11 and later.
+
+To check whether Python is installed, open a terminal and run:
+
 ```bash
-# get text snippets when the letters 'cough' appear in corpus.csv and output to the directory `out`
-python src/get_text_snippets.py --input-files sample/corpus_lined.csv --outdir out --regexes COUGH==cough --noteorder-label note_line
+python --version
 ```
 
-### Running Code Against a Corpus
+On some systems, the command may be:
 
-Once the regular expressions have been built and tested, the next step is running them against the corpus.
+```bash
+python3 --version
+```
 
-Usage:
+You should see a version such as:
+
+```text
+Python 3.13.11
+```
+
+### 2. Download or Clone the Project
+
+Place the project somewhere easy to find.
+
+For example:
+
+- Windows: `C:\code\sa_konsepy`
+- macOS/Linux: `~/code/sa_konsepy`
+
+In the instructions below, this folder is referred to as `$PROJECT_PATH`.
+
+### 3. Open a Terminal in the Project Folder
+
+On Windows PowerShell:
+
+```bash
+cd C:\code\sa_konsepy
+```
+
+On macOS/Linux:
+
+```bash
+cd ~/code/sa_konsepy
+```
+
+### 4. Create a Virtual Environment
+
+A virtual environment keeps this project’s Python packages separate from other Python projects on your computer.
+
+Create one with:
+
+```bash
+python -m venv .venv
+```
+
+If `python` does not work, try:
+
+```bash
+python3 -m venv .venv
+```
+
+### 5. Activate the Virtual Environment
+
+On Windows PowerShell:
+
+```bash
+.venv\Scripts\Activate.ps1
+```
+
+On macOS/Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+After activation, your terminal prompt may show `(.venv)`.
+
+### 6. Install Required Packages
+
+Install the project dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Alternatively, if you want to install the project as a local Python package:
+
+```bash
+pip install .
+```
+
+### 7. Make the Source Code Available to Python
+
+Before running the scripts directly, set `PYTHONPATH` so Python can find the project code.
+
+On Windows PowerShell:
+
+```bash
+$env:PYTHONPATH="$PWD\src"
+```
+
+On macOS/Linux:
+
+```bash
+export PYTHONPATH="$PWD/src"
+```
+
+You should run this command each time you open a new terminal, unless your environment is configured another way.
+
+## Running the Code
+
+### Run All Concepts
+
+To process the sample corpus and write results to an output directory named `out`:
+
 ```bash
 python src/run_all.py --input-files sample/corpus.csv --outdir out
 ```
 
-For running against a specific concept (nb: the name of the concept is the name of the file in `src/example_nlp/concepts`, so `src/example_nlp/concepts/asthma.py` has a concept name of `asthma`):
+This runs all configured concept detectors, including the suicide attempt / self-harm detector.
+
+### Run Only the Suicide Attempt Concept
+
+To run only the suicide attempt concept:
 
 ```bash
-python src/run_concept.py --input-files sample/corpus.csv --outdir out --concept asthma
+python src/run_concept.py --input-files sample/corpus.csv --outdir out --concept suicide_attempt
 ```
 
-Or, for a lined corpus:
+### Run on a Corpus Split Across Lines
+
+If your notes are split across multiple rows and ordered by a line column, use `--noteorder-label`.
+
+Example:
+
 ```bash
 python src/run_all.py --input-files sample/corpus_lined.csv --outdir out --noteorder-label note_line
 ```
 
+Or for only the suicide attempt concept:
 
-## Roadmap
+```bash
+python src/run_concept.py --input-files sample/corpus_lined.csv --outdir out --concept suicide_attempt --noteorder-label note_line
+```
 
-* Create a complete, concrete example walking through all the steps using the `sample/corpus.csv`.
-* Turn into 'cookiecutter' so that setup will be done automatically.
+## Using Your Own Data
+
+Prepare a CSV file with at least these columns:
+
+```csv
+studyid,note_id,note_text
+```
+
+Then run:
+
+```bash
+python src/run_all.py --input-files path/to/your_data.csv --outdir out
+```
+
+If your column names differ, specify them explicitly.
+
+For example, if your file has these columns:
+
+```csv
+person_id,document_id,text
+```
+
+Run:
+
+```bash
+python src/run_all.py ^
+  --input-files path/to/your_data.csv ^
+  --outdir out ^
+  --id-label person_id ^
+  --noteid-label document_id ^
+  --notetext-label text
+```
+
+On macOS/Linux, use backslashes for line continuation:
+
+```bash
+python src/run_all.py \
+  --input-files path/to/your_data.csv \
+  --outdir out \
+  --id-label person_id \
+  --noteid-label document_id \
+  --notetext-label text
+```
+
+You can also write the command on one line:
+
+```bash
+python src/run_all.py --input-files path/to/your_data.csv --outdir out --id-label person_id --noteid-label document_id --notetext-label text
+```
+
+## Finding Example Text Snippets
+
+Before running the full detector, it can be useful to inspect examples of relevant phrases in your corpus.
+
+For example, to extract snippets containing the phrase `suicide attempt`:
+
+```bash
+python src/get_text_snippets.py --input-files sample/corpus.csv --outdir out --regexes SUICIDE_ATTEMPT=="suicide attempt"
+```
+
+To search for self-harm phrasing:
+
+```bash
+python src/get_text_snippets.py --input-files sample/corpus.csv --outdir out --regexes SELF_HARM=="self harm"
+```
+
+For a lined corpus:
+
+```bash
+python src/get_text_snippets.py --input-files sample/corpus_lined.csv --outdir out --regexes SUICIDE_ATTEMPT=="suicide attempt" --noteorder-label note_line
+```
+
+Snippet review is recommended when adapting this project to a new dataset, because language patterns can vary across
+institutions, note types, and documentation practices.
+
+## Running Tests
+
+Tests confirm that the suicide attempt detection rules behave as expected on known examples.
+
+Run:
+
+```bash
+pytest tests
+```
+
+A successful test run should complete without failures.
+
+If a test fails, it usually means that a rule was changed in a way that affected expected behavior.
+
+## Output Review
+
+The scripts write output files to the directory specified by `--outdir`.
+
+For example:
+
+```bash
+python src/run_all.py --input-files sample/corpus.csv --outdir out
+```
+
+will create or update files in:
+
+```text
+out/
+```
+
+Review the generated output carefully. Matches should be treated as candidate detections that may require human
+validation.
+
+## Deployment Guidance
+
+For routine use, the recommended workflow is:
+
+1. Prepare a CSV file containing the text to analyze.
+2. Confirm the file has the required identifier and text columns.
+3. Create and activate the Python virtual environment.
+4. Install dependencies.
+5. Run the detector on a small sample first.
+6. Review the output manually.
+7. If the output looks correct, run the detector on the full corpus.
+8. Store outputs securely according to your organization’s privacy and data governance requirements.
+
+Example production-style run:
+
+```bash
+python src/run_all.py --input-files data/input_notes.csv --outdir results/suicide_attempt_detection
+```
+
+If processing sensitive data, ensure that:
+
+- The machine is approved for handling that data.
+- Input and output files are stored in approved locations.
+- Access is limited to authorized users.
+- Any extracted snippets are treated as potentially sensitive.
+
+## Limitations
+
+This project uses rule-based pattern matching. As a result:
+
+- It may miss relevant mentions that use unexpected wording.
+- It may incorrectly flag irrelevant text.
+- It may not fully understand context, temporality, severity, or intent.
+- It cannot determine whether an event truly occurred.
+- It should not be used for emergency monitoring without appropriate clinical systems and governance.
+
+The detector is best used as a transparent, auditable first-pass text screening tool.
+
+## Customization
+
+Detection logic is located in:
+
+```text
+src/sa_konsepy/concepts/suicide_attempt.py
+```
+
+Tests are located in:
+
+```text
+tests/test_suicide_attempt.py
+```
+
+When changing detection rules, add or update tests to document the expected behavior.
+
+After modifying rules, run:
+
+```bash
+pytest tests
+```
+
+## Troubleshooting
+
+### `python` is not recognized
+
+Try:
+
+```bash
+python3 --version
+```
+
+If that works, use `python3` instead of `python` in the commands.
+
+### `ModuleNotFoundError`
+
+Make sure you activated the virtual environment and set `PYTHONPATH`.
+
+Windows PowerShell:
+
+```bash
+.venv\Scripts\Activate.ps1
+$env:PYTHONPATH="$PWD\src"
+```
+
+macOS/Linux:
+
+```bash
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src"
+```
+
+### Package installation fails
+
+Make sure the virtual environment is activated, then upgrade `pip`:
+
+```bash
+python -m pip install --upgrade pip
+```
+
+Then reinstall requirements:
+
+```bash
+pip install -r requirements.txt
+```
+
+### No matches are found
+
+Check that:
+
+- The input file path is correct.
+- The text column is correctly named or specified with `--notetext-label`.
+- The input text actually contains relevant terms.
+- The data is saved as a readable CSV file.
+
+You can also use `get_text_snippets.py` to inspect whether expected terms appear in your corpus.
+
