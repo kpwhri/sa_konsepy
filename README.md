@@ -19,7 +19,7 @@ For a complete example, see [this step-by-step walkthrough](doco/SOCIAL_SUPPORT_
 
 ### Prerequisites
 
-* Python 3.9+
+* Python >=3.11
 * Download/clone this project
   * The path to this location will be referred to as `$PATH` in the instructions below (this might be `C:\code`, etc.)
 * (Optional, but recommended) setup a virtual environment to isolate this particular installation
