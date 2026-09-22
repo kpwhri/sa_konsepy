@@ -26,7 +26,7 @@ class SuicideAttempt(enum.Enum):
     FAMILY = 3
     CODE = 4
     PROBLEM_LIST = 5  # YES, in problem list
-    SELF_HARM = 6
+    # SELF_HARM = 6
     YES_ACTION = 2  # YES, but related to an action performed
 
 
@@ -77,9 +77,10 @@ sa_hx_pred = rf'(?:{approximately}\W*)?(?:{in_period}|{period_ago}|{more_than_ti
 the = r'\b(?:an?|the|his|her|their)\b'
 
 # current suicide attempts building on Fernandes et al (2018)
+own_life = r'(?:(?:his|her|their)\W*)(?:own\W*)?life'
 self = (r'(?:'
         r'(?:(?:him|her|them|their)?\W*)sel(?:f|ves)'
-        r'|(?:(?:his|her|their)\W*)(?:own\W*)?life'
+        rf'|{own_life}'
         r')')
 attempt = r'(?:attempt|fail|tr[yi])\w*(?:\W*to)?'
 in_front_subj = r'\b(?:leap|jump|walk|ran|run)\w{0,4}\b'
@@ -87,7 +88,9 @@ in_front_of = r'(?:in\W*front\W*of|out\W*into|into)'
 in_front_pred = r'(?:\w+\W+){0,2}(?:motor|bus|train|traffic|car|truck|vehicle)\b\w*'
 from_a_bridge = r'(?:(?:off|from)?\W*(?:\w+\W*){0,2}(?:bridge|building))'
 weapon = r'(?:gun|firearm|handgun|knife|rifle|weapon)'
-suicide_action = r'(?:drown|end|hang|kill|shoot|stab|take)'
+suicide_action = r'(?:drown|end|hang|kill|shoot|stab)'
+# new type of suicide action
+take = r'(?:take)'
 commit_suicide = r'(?:commit\W*suicide|(?:deliberate\W*)?self\W*harm|(?:death|died)\W*by\W*suicid)'
 used = r'\b(?:used|took)\b'
 harmed = r'\b(?:shot|stabbed)\b'
@@ -101,6 +104,7 @@ SA_PAT = re.compile(
     rf'|suicid\w+\W*(?:attempt\W*)?(?:was\W*)?(?:unsuccessful|not\W*successful|due\W*to)'
     rf'|{attempt}\W*{commit_suicide}'
     rf'|{attempt}\W*{suicide_action}\W*{self}'
+    rf'|{attempt}\W*{take}\W*{own_life}'
     rf')',
     re.I,
 )

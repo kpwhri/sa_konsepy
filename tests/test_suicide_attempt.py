@@ -46,12 +46,17 @@ def test_run_regexes_yes(text):
     'not hx of suicide attempt',
     'nor previous suicide attempt',
     'or past suicide attempt',
+    # TODO: treat as negated -> doesn't matter if hx
     'denies hx of suicide attempt: no',
     'denies prior suicide attempt during childhood',
     'denies past self harm behaviour in high school',
     'denied deliberate self harm in the past',
     'no suicide attempt',
     'suicide attempt: never',
+    'she has never had a suicide attempt',
+    'has never had a suicide attempt since 1999',
+    'has no other self-harm behavior',
+    'has no other self harm behavior',
 ])
 def test_run_regexes_no(text):
     results = set(RUN_REGEXES_FUNC(text))
@@ -71,6 +76,8 @@ def test_run_regexes_no(text):
     'son attempted to commit suicide during college',
     'uncle attempted to commit suicide',
     'DAUGHTER\nattempted suicide',
+    # ensure 'daughter' captured not 'son' (which is excluded across sentence boundary)
+    'son. Daughter also had a suicide attempt',
 ],
                          )
 def test_run_regexes_family(text):
@@ -124,10 +131,12 @@ def test_suppress_overlaps_is_working(text):
     'deer jumped in front of the car',
     'jumping into the lake',
     'ran into her car',
+    'tried to take himself off meloxicam',
 ])
 def test_run_regexes_empty(text):
     results = list(RUN_REGEXES_FUNC(text))
     assert len(results) == 0
+
 
 @pytest.mark.parametrize('text', [
     'ran in front of a car',

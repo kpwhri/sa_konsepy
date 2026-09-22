@@ -18,6 +18,10 @@ Types of changes:
 
 ## [Unreleased]
 
+### Added
+
+* A number of fixes, n.b., that the next version of konsepy will be required once released
+
 ## [0.1.0] - 2026-06-03
 
 ### Added
