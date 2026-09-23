@@ -43,6 +43,13 @@ suicide_attempt = '(?:{})'.format('|'.join([
 
 day = r'(?:\d{1,2}\W*)'
 year = r'(?:\d{2,4})'
+date = '|'.join([
+    rf'{day}?January\W*{year}?', rf'{day}?February\W*{year}?', rf'{day}?March\W*{year}?',
+    rf'{day}?April\W*{year}?', rf'{day}?May\W*{year}?', rf'{day}?June\W*{year}?',
+    rf'{day}?July\W*{year}?', rf'{day}?August\W*{year}?', rf'{day}?September\W*{year}?',
+    rf'{day}?October\W*{year}?', rf'{day}?November\W*{year}?', rf'{day}?December\W*{year}?',
+    r'(?:20|19)\d{2}', r'\d{1,2}/\d{1,4}(?:\d{2,4})?'
+])
 in_period = r'(?:in|on|during)\W*(?:\w+\W+)?(?:{})'.format('|'.join([
     'college', 'university', 'childhood', r'(?:high|middle)\W*school', r'jr\W*high',
     'teens', 'twenties', 'thirties', r'\d0s',
@@ -173,6 +180,8 @@ REGEXES = [
     # more generic
     (re.compile(rf'\b{hx_of}\W*{any_sa}\b', re.I),
      SuicideAttempt.HISTORY, [check_if_other_subject, check_if_in_problem_list]),
+    (re.compile(rf'\b(?:{any_sa}\W*{date}|{date}\W*{any_sa})\b', re.I),
+     SuicideAttempt.HISTORY, [check_if_other_subject]),
     (re.compile(rf'\b(?:Z91.51|Z91.52|R45.88|R45.851|E958.9|V62.84)\b'),
      SuicideAttempt.CODE),
     # current suicide attempt

@@ -98,6 +98,7 @@ def test_run_regexes_family(text):
     'hx of self harm: 2 times',
     'past suicide attempt during high school',
     'attempted suicide in college',
+    'suicide attempt 1/1/1999',
 ])
 def test_run_regexes_history(text):
     results = set(RUN_REGEXES_FUNC(text))
