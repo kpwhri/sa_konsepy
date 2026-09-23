@@ -175,7 +175,7 @@ def check_if_in_history_section(m, text, **kwargs):
             r'(?:History|Hx|PMH|PMHx)'
             r'|(?:prior|past)'
             r'(?:[ \-/]+\w+){0,5}'  # up to 5 intervening words in header
-            r') *:', re.I),
+            r')[^\S\r\n]*[:\n]', re.I),
         skipper_pat=re.compile(r'(?:\n\n|:)', re.I),
         if_found_return=SuicideAttempt.HISTORY,
     )
