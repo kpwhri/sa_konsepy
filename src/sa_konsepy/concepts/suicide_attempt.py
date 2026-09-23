@@ -145,20 +145,40 @@ def check_if_colon_before(m, precontext, **kwargs):
         return SKIP
 
 
-def check_if_in_problem_list(m, text, **kwargs):
+def get_previous_section(m, text, pattern, skipper_pat, if_found_return):
     prev_match = None
-    for problist_match in re.finditer(r'(?:(?:PMH|Medical History):|problem list:?)', text, re.I):
-        if problist_match.start() > m.end():  # occurs after current match
+    for target_m in pattern.finditer(text):
+        if target_m.start() > m.end():  # occurs after current match
             break
-        prev_match = problist_match
+        prev_match = target_m
     if prev_match:
         target_text = text[prev_match.end():m.start()].lower()
-        for skipper in [':', 'medications']:
-            if skipper in target_text:  # found section in between
-                return None
-        return SuicideAttempt.PROBLEM_LIST
+        if skipper_pat.search(target_text):  # found section in between
+            return None
+        return if_found_return
     else:
         return None
+
+
+def check_if_in_problem_list(m, text, **kwargs):
+    return get_previous_section(
+        m, text, pattern=re.compile(r'(?:problem list:?)', re.I),
+        skipper_pat=re.compile(r'(?::|medications)', re.I),
+        if_found_return=SuicideAttempt.PROBLEM_LIST,
+    )
+
+
+def check_if_in_history_section(m, text, **kwargs):
+    return get_previous_section(
+        m, text, pattern=re.compile(
+            r'(?:'
+            r'(?:History|Hx|PMH|PMHx)'
+            r'|(?:prior|past)'
+            r'(?:[ \-/]+\w+){0,5}'  # up to 5 intervening words in header
+            r') *:', re.I),
+        skipper_pat=re.compile(r'(?:\n\n|:)', re.I),
+        if_found_return=SuicideAttempt.HISTORY,
+    )
 
 
 REGEXES = [
@@ -188,10 +208,12 @@ REGEXES = [
     (SA_PAT, SuicideAttempt.YES, [
         check_if_other_subject,
         check_if_in_problem_list,
+        check_if_in_history_section,
         lambda *x, **kw: check_if_negated(*x, **kw, neg_concept=SuicideAttempt.NO),
     ]),
     (SA_ACTION_PAT, SuicideAttempt.YES_ACTION, [
         check_if_other_subject,
+        check_if_in_history_section,
         lambda *x, **kw: check_if_negated(*x, **kw, neg_concept=SuicideAttempt.NO),
     ])
 ]

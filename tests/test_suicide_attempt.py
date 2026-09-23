@@ -33,6 +33,8 @@ from sa_konsepy.concepts.suicide_attempt import SuicideAttempt, RUN_REGEXES_FUNC
     'shot herself',
     'stabbed himself',
     'ran into traffic',
+    'History of Presenting Problem:\nsuicide attempt',
+    'History:\n\nsuicide attempt',
 ])
 def test_run_regexes_yes(text):
     results = set(RUN_REGEXES_FUNC(text))
@@ -57,6 +59,7 @@ def test_run_regexes_yes(text):
     'has never had a suicide attempt since 1999',
     'has no other self-harm behavior',
     'has no other self harm behavior',
+    'Suicide Attempt: patient denies',
 ])
 def test_run_regexes_no(text):
     results = set(RUN_REGEXES_FUNC(text))
@@ -99,6 +102,9 @@ def test_run_regexes_family(text):
     'past suicide attempt during high school',
     'attempted suicide in college',
     'suicide attempt 1/1/1999',
+    'Past History:\nSuicide attempt',
+    'PMH: hx of deliberate self harm',
+    'Medical History: deliberate self harm',
 ])
 def test_run_regexes_history(text):
     results = set(RUN_REGEXES_FUNC(text))
@@ -109,8 +115,6 @@ def test_run_regexes_history(text):
     'problem list: hx of suicide attempt',
     'problem list hx of suicide attempt',
     'problem list: prior suicide attempts',
-    'PMH: hx of deliberate self harm',
-    'Medical History: deliberate self harm',
 ])
 def test_run_regexes_problem_list(text):
     results = set(RUN_REGEXES_FUNC(text))
