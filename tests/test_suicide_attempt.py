@@ -137,6 +137,7 @@ def test_suppress_overlaps_is_working(text):
     'jumping into the lake',
     'ran into her car',
     'tried to take himself off meloxicam',
+    'Patient\'s mother committed suicide when she was young',
 ])
 def test_run_regexes_empty(text):
     results = list(RUN_REGEXES_FUNC(text))

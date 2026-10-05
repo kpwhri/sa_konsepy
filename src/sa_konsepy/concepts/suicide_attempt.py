@@ -27,7 +27,7 @@ class SuicideAttempt(enum.Enum):
     CODE = 4
     PROBLEM_LIST = 5  # YES, in problem list
     # SELF_HARM = 6
-    YES_ACTION = 2  # YES, but related to an action performed
+    YES_ACTION = 7  # YES, but related to an action performed
 
 
 # account for variables ways to describe HISTORY suicide attempt
@@ -43,13 +43,14 @@ suicide_attempt = '(?:{})'.format('|'.join([
 
 day = r'(?:\d{1,2}\W*)'
 year = r'(?:\d{2,4})'
-date = '|'.join([
+_date = '|'.join([
     rf'{day}?January\W*{year}?', rf'{day}?February\W*{year}?', rf'{day}?March\W*{year}?',
     rf'{day}?April\W*{year}?', rf'{day}?May\W*{year}?', rf'{day}?June\W*{year}?',
     rf'{day}?July\W*{year}?', rf'{day}?August\W*{year}?', rf'{day}?September\W*{year}?',
     rf'{day}?October\W*{year}?', rf'{day}?November\W*{year}?', rf'{day}?December\W*{year}?',
     r'(?:20|19)\d{2}', r'\d{1,2}/\d{1,4}(?:\d{2,4})?'
 ])
+date = f'(?:{_date})'
 in_period = r'(?:in|on|during)\W*(?:\w+\W+)?(?:{})'.format('|'.join([
     'college', 'university', 'childhood', r'(?:high|middle)\W*school', r'jr\W*high',
     'teens', 'twenties', 'thirties', r'\d0s',
@@ -80,7 +81,7 @@ number = r'(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve
 times = rf'(?:{number}\s*(?:x|times?))'
 more_than_times = rf'{more_than}{times}'
 age = rf'(?:at\W*)?age\W*{number}'
-sa_hx_pred = rf'(?:{approximately}\W*)?(?:{in_period}|{period_ago}|{more_than_times}|{as_a_role}|{age})'
+sa_hx_pred = rf'(?:{approximately}\W*)?(?:(?:{in_period})|(?:{period_ago})|(?:{more_than_times})|(?:{as_a_role})|(?:{age}))'
 the = r'\b(?:an?|the|his|her|their)\b'
 
 # current suicide attempts building on Fernandes et al (2018)
@@ -200,7 +201,7 @@ REGEXES = [
     # more generic
     (re.compile(rf'\b{hx_of}\W*{any_sa}\b', re.I),
      SuicideAttempt.HISTORY, [check_if_other_subject, check_if_in_problem_list]),
-    (re.compile(rf'\b(?:{any_sa}\W*{date}|{date}\W*{any_sa})\b', re.I),
+    (re.compile(rf'\b(?:(?:{any_sa}\W*{date})|(?:{date}\W*{any_sa}))\b', re.I),
      SuicideAttempt.HISTORY, [check_if_other_subject]),
     (re.compile(rf'\b(?:Z91.51|Z91.52|R45.88|R45.851|E958.9|V62.84)\b'),
      SuicideAttempt.CODE),
